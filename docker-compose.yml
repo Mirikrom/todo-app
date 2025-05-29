@@ -1,0 +1,48 @@
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: todo_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: todo_db
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_USER: todo_user
+      MYSQL_PASSWORD: todopass
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+
+  backend:
+    build: ./backend
+    container_name: todo_backend
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DB_NAME=todo_db
+      - DB_USER=todo_user
+      - DB_PASSWORD=todopass
+      - DB_HOST=db
+      - DB_PORT=3306
+
+  frontend:
+    build: ./frontend
+    container_name: todo_frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev
+
+volumes:
+  mysql_data:
+
